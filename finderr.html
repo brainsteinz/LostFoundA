@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Univ A's LostFound | Cloud</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
+
+    <header class="bg-purple-800 text-white p-6 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold"><i class="fas fa-cloud mr-2"></i>Univ A's LostFound</h1>
+            </div>
+            <button onclick="openModal()" class="bg-white text-purple-800 px-5 py-2 rounded-full font-bold hover:shadow-lg transition-all active:scale-95">
+                <i class="fas fa-plus mr-2"></i>Buat Laporan
+            </button>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        <div id="filterContainer" class="flex flex-wrap gap-2 mb-8 justify-center">
+            <button onclick="setFilter('Semua')" class="filter-btn bg-purple-800 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-sm">Semua</button>
+            <button onclick="setFilter('Elektronik')" class="filter-btn bg-white text-gray-600 px-4 py-2 rounded-full text-sm font-semibold shadow-sm">Elektronik</button>
+            <button onclick="setFilter('Dokumen')" class="filter-btn bg-white text-gray-600 px-4 py-2 rounded-full text-sm font-semibold shadow-sm">Dokumen</button>
+            <button onclick="setFilter('Kunci')" class="filter-btn bg-white text-gray-600 px-4 py-2 rounded-full text-sm font-semibold shadow-sm">Kunci</button>
+            <button onclick="setFilter('Lainnya')" class="filter-btn bg-white text-gray-600 px-4 py-2 rounded-full text-sm font-semibold shadow-sm">Lainnya</button>
+        </div>
+
+        <div id="reportList" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="col-span-full text-center py-20 text-gray-400 italic">Menghubungkan ke Cloud...</div>
+        </div>
+    </main>
+
+    <div id="modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl">
+            <div class="bg-purple-800 p-5 text-white flex justify-between items-center">
+                <h3 class="font-bold text-lg">Detail Laporan Online</h3>
+                <button onclick="closeModal()"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            
+            <div class="p-6 space-y-4">
+                <select id="statusInput" class="w-full p-3 bg-gray-50 border rounded-xl outline-none">
+                    <option value="Hilang">Barang Hilang</option>
+                    <option value="Temuan">Barang Temuan</option>
+                </select>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <select id="categoryInput" class="p-3 bg-gray-50 border rounded-xl outline-none">
+                        <option value="Elektronik">Elektronik</option>
+                        <option value="Dokumen">Dokumen</option>
+                        <option value="Kunci">Kunci</option>
+                        <option value="Lainnya">Lainnya</option>
+                    </select>
+                    <input type="text" id="itemName" class="p-3 bg-gray-50 border rounded-xl outline-none" placeholder="Nama Barang">
+                </div>
+                
+                <input type="text" id="location" class="w-full p-3 bg-gray-50 border rounded-xl outline-none" placeholder="Lokasi">
+                
+                <input type="text" id="contact" class="w-full p-3 bg-gray-50 border rounded-xl outline-none" placeholder="Kontak (WA/IG)">
+                
+                <button onclick="submitReport()" class="w-full bg-purple-800 text-white font-bold py-4 rounded-xl hover:bg-purple-900 transition-colors">
+                    Kirim
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        /**
+         * Mengimpor SDK Firebase melalui CDN:
+         * - initializeApp: Memulai koneksi ke project Firebase.
+         * - getFirestore: Akses ke Database Firestore (NoSQL).
+         * - onSnapshot: Fungsi 'Listener' yang mendeteksi perubahan data secara real-time.
+         */
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // Konfigurasi Project Firebase: ID unik yang menghubungkan file ini ke Dashboard Firebase Anda.
+        const firebaseConfig = {
+          apiKey: "AIzaSyAZdhcvWrqtW3E_3Hc5s7cVF7JqWmxsURY",
+          authDomain: "missingfinderrr.firebaseapp.com",
+          projectId: "missingfinderrr",
+          storageBucket: "missingfinderrr.firebasestorage.app",
+          messagingSenderId: "360364297487",
+          appId: "1:360364297487:web:eeee10b5ac2be5b837c27a"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const colRef = collection(db, "reports"); // Menunjuk ke koleksi data bernama 'reports'.
+
+        let currentFilter = 'Semua';
+
+        /**
+         * 1. FUNGSI PENYADAP DATA (REAL-TIME LISTENER):
+         * Fungsi ini berjalan otomatis setiap kali ada data baru yang masuk atau dihapus di Cloud.
+         */
+        const q = query(colRef, orderBy("createdAt", "desc")); // Mengurutkan laporan dari yang paling baru.
+        
+        onSnapshot(q, (snapshot) => {
+            let reports = [];
+            snapshot.docs.forEach(doc => {
+                // Mengambil data dokumen dan melampirkan ID dokumennya untuk keperluan penghapusan data.
+                reports.push({ ...doc.data(), id: doc.id });
+            });
+            window.allReports = reports; // Menyimpan salinan data ke variabel global agar bisa difilter.
+            renderDisplay(reports);
+        });
+
+        /**
+         * 2. FUNGSI RENDER DISPLAY:
+         * Mengonversi data dari database menjadi elemen visual (kartu laporan) di layar pengguna.
+         */
+        window.renderDisplay = (data) => {
+            const listElement = document.getElementById('reportList');
+            listElement.innerHTML = ''; // Membersihkan tampilan sebelum memuat ulang data terbaru.
+            
+            // Logika penyaringan (filtering) berdasarkan kategori yang dipilih.
+            const filtered = currentFilter === 'Semua' ? data : data.filter(r => r.category === currentFilter);
+
+            filtered.forEach(report => {
+                const isHilang = report.status === 'Hilang';
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all";
+                
+                // Template Kartu Laporan: Mengatur warna aksen berdasarkan status (Orange/Biru).
+                card.innerHTML = `
+                    <div class="h-2 ${isHilang ? 'bg-orange-400' : 'bg-blue-400'}"></div>
+                    <div class="p-5">
+                        <div class="flex justify-between items-start mb-3">
+                            <span class="text-[10px] font-bold px-2 py-1 rounded-md ${isHilang ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'}">${report.status}</span>
+                            <span class="text-[10px] text-gray-400 bg-gray-50 px-2 py-1 rounded">${report.category}</span>
+                        </div>
+                        <h3 class="font-bold text-gray-800 text-lg mb-2 capitalize">${report.name}</h3>
+                        <p class="text-xs text-gray-500"><i class="fas fa-map-marker-alt mr-2 text-purple-600"></i>${report.location}</p>
+                        <div class="pt-3 mt-4 border-t flex justify-between items-center">
+                            <span class="text-sm font-bold text-purple-800">${report.contact}</span>
+                            <button onclick="deleteReport('${report.id}')" title="Tandai Selesai" class="text-gray-300 hover:text-red-500 transition-colors">
+                                <i class="fas fa-check-circle text-xl"></i>
+                            </button>
+                        </div>
+                    </div>`;
+                listElement.appendChild(card);
+            });
+        };
+
+        /**
+         * 3. FUNGSI KIRIM DATA (SEND TO CLOUD):
+         * Mengumpulkan input dari pengguna dan mengunggahnya sebagai dokumen baru ke Firestore.
+         */
+        window.submitReport = async () => {
+            const data = {
+                status: document.getElementById('statusInput').value,
+                category: document.getElementById('categoryInput').value,
+                name: document.getElementById('itemName').value,
+                location: document.getElementById('location').value,
+                contact: document.getElementById('contact').value,
+                createdAt: new Date() // Menyimpan timestamp untuk keperluan pengurutan laporan.
+            };
+
+            // Validasi: Memastikan data minimal (Nama & Lokasi) sudah terisi.
+            if(!data.name || !data.location) return alert("Mohon isi nama barang dan lokasi!");
+
+            try {
+                await addDoc(colRef, data); // Proses pengunggahan ke server Google.
+                closeModal();
+                alert("Laporan berhasil dikirim!");
+                resetForm(); // Mengosongkan form input.
+            } catch (err) {
+                console.error("Firebase Error:", err);
+                alert("Gagal mengirim laporan. Pastikan koneksi internet tersedia.");
+            }
+        };
+
+        /**
+         * 4. FUNGSI HAPUS DATA (FINISH):
+         * Menghapus dokumen dari Firestore berdasarkan ID uniknya saat barang sudah ditemukan.
+         */
+        window.deleteReport = async (id) => {
+            if(confirm("Apakah laporan ini sudah selesai?")) {
+                try {
+                    const docRef = doc(db, "reports", id);
+                    await deleteDoc(docRef); // Proses penghapusan permanen dari Cloud.
+                } catch (err) {
+                    alert("Gagal menghapus laporan.");
+                }
+            }
+        };
+
+        /**
+         * 5. LOGIKA FILTER UI:
+         * Menangani perubahan warna tombol filter (Aktif vs Tidak Aktif).
+         */
+        window.setFilter = (cat) => {
+            currentFilter = cat;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                if(btn.innerText === cat) {
+                    btn.classList.replace('bg-white', 'bg-purple-800');
+                    btn.classList.replace('text-gray-600', 'text-white');
+                } else {
+                    btn.classList.replace('bg-purple-800', 'bg-white');
+                    btn.classList.replace('text-white', 'text-gray-600');
+                }
+            });
+            renderDisplay(window.allReports);
+        };
+
+        // Fungsi pembantu untuk mereset/mengosongkan input form setelah laporan dikirim.
+        function resetForm() {
+            document.getElementById('itemName').value = '';
+            document.getElementById('location').value = '';
+            document.getElementById('contact').value = '';
+        }
+    </script>
+
+    <script>
+        function openModal() { document.getElementById('modal').classList.remove('hidden'); }
+        function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+    </script>
+</body>
+</html>
