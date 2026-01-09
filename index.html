@@ -14,7 +14,9 @@
     <header class="bg-purple-800 text-white p-6 shadow-md">
         <div class="container mx-auto flex justify-between items-center">
             <div>
-                <h1 class="text-2xl font-bold"><i class="fas fa-cloud mr-2"></i>Find Your Thing(s) In Our Campus</h1>
+                <h1 class="text-2xl font-bold">
+                    <i class="fas fa-search mr-2"></i>Find Your Thing(s) In Our Campus
+                </h1>
             </div>
             <button onclick="openModal()" class="bg-white text-purple-800 px-5 py-2 rounded-full font-bold hover:shadow-lg transition-all active:scale-95">
                 <i class="fas fa-plus mr-2"></i>Buat Laporan
@@ -79,7 +81,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // Konfigurasi Database: Menghubungkan ke proyek "missingfinderrr" di Cloud
+        // Konfigurasi akses ke Project Firebase di Cloud
         const firebaseConfig = {
           apiKey: "AIzaSyAZdhcvWrqtW3E_3Hc5s7cVF7JqWmxsURY",
           authDomain: "missingfinderrr.firebaseapp.com",
@@ -96,8 +98,9 @@
         let currentFilter = 'Semua';
 
         /**
-         * FUNGSI PENYADAP DATA (onSnapshot): 
-         * Mendeteksi data baru di cloud dan merendernya secara real-time
+         * FUNGSI LISTENER (onSnapshot):
+         * Metode ini mendengarkan perubahan pada koleksi secara real-time. 
+         * Setiap kali ada laporan baru masuk ke Cloud, tampilan web akan diperbarui tanpa reload.
          */
         const q = query(colRef, orderBy("createdAt", "desc"));
         
@@ -111,8 +114,8 @@
         });
 
         /**
-         * FUNGSI TAMPILAN (renderDisplay): 
-         * Membuat elemen kartu laporan termasuk informasi waktu
+         * FUNGSI RENDER (renderDisplay):
+         * Bertanggung jawab menyusun struktur kartu laporan dan memformat tampilan waktu kejadian.
          */
         window.renderDisplay = (data) => {
             const listElement = document.getElementById('reportList');
@@ -125,7 +128,7 @@
                 const card = document.createElement('div');
                 card.className = "bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all";
                 
-                // Format tanggal agar mudah dibaca oleh pengguna Indonesia
+                // Format waktu menggunakan standar lokal Indonesia untuk kejelasan informasi
                 const formattedTime = report.time ? new Date(report.time).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : 'Waktu tidak diatur';
 
                 card.innerHTML = `
@@ -154,8 +157,8 @@
         };
 
         /**
-         * FUNGSI KIRIM (submitReport): 
-         * Menyimpan data input ke dalam koleksi "reports" di Firestore
+         * FUNGSI KIRIM (submitReport):
+         * Menangkap input data dan menyimpannya sebagai dokumen baru di Cloud Firestore.
          */
         window.submitReport = async () => {
             const data = {
@@ -164,12 +167,11 @@
                 name: document.getElementById('itemName').value,
                 location: document.getElementById('location').value,
                 contact: document.getElementById('contact').value,
-                time: document.getElementById('itemTime').value, // Mengambil nilai tanggal & jam
+                time: document.getElementById('itemTime').value, 
                 createdAt: new Date()
             };
 
-            // Validasi input wajib
-            if(!data.name || !data.location || !data.time) return alert("Mohon isi nama, lokasi, dan waktu kejadian!");
+            if(!data.name || !data.location || !data.time) return alert("Lengkapi data Nama, Lokasi, dan Waktu!");
 
             try {
                 await addDoc(colRef, data); 
@@ -178,16 +180,16 @@
                 resetForm();
             } catch (err) {
                 console.error("Firebase Error:", err);
-                alert("Gagal mengirim laporan ke Cloud.");
+                alert("Gagal terhubung ke Cloud.");
             }
         };
 
         /**
-         * FUNGSI HAPUS (deleteReport): 
-         * Menghapus dokumen dari cloud database
+         * FUNGSI HAPUS (deleteReport):
+         * Digunakan untuk menghapus laporan secara permanen dari Cloud setelah barang ditemukan.
          */
         window.deleteReport = async (id) => {
-            if(confirm("Apakah laporan ini sudah selesai?")) {
+            if(confirm("Tandai laporan ini sebagai selesai dan hapus?")) {
                 try {
                     const docRef = doc(db, "reports", id);
                     await deleteDoc(docRef); 
@@ -198,7 +200,8 @@
         };
 
         /**
-         * LOGIKA FILTER: Mengubah filter kategori yang aktif
+         * LOGIKA FILTER UI:
+         * Mengelola perubahan tampilan visual pada tombol filter yang aktif.
          */
         window.setFilter = (cat) => {
             currentFilter = cat;
@@ -223,7 +226,7 @@
     </script>
 
     <script>
-        // Fungsi pembantu untuk antarmuka pengguna
+        // Fungsi manajemen antarmuka Modal
         function openModal() { document.getElementById('modal').classList.remove('hidden'); }
         function closeModal() { document.getElementById('modal').classList.add('hidden'); }
     </script>
