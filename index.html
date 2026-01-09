@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Univ A's LostFound | Cloud</title>
+    <title>Find Your Thing(s) In Our Campus | Cloud</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -14,7 +14,7 @@
     <header class="bg-purple-800 text-white p-6 shadow-md">
         <div class="container mx-auto flex justify-between items-center">
             <div>
-                <h1 class="text-2xl font-bold"><i class="fas fa-cloud mr-2"></i>Univ A's LostFound</h1>
+                <h1 class="text-2xl font-bold"><i class="fas fa-cloud mr-2"></i>Find Your Thing(s) In Our Campus</h1>
             </div>
             <button onclick="openModal()" class="bg-white text-purple-800 px-5 py-2 rounded-full font-bold hover:shadow-lg transition-all active:scale-95">
                 <i class="fas fa-plus mr-2"></i>Buat Laporan
@@ -61,6 +61,11 @@
                 
                 <input type="text" id="location" class="w-full p-3 bg-gray-50 border rounded-xl outline-none" placeholder="Lokasi">
                 
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-purple-800 ml-1 uppercase">Waktu Kejadian:</label>
+                    <input type="datetime-local" id="itemTime" class="w-full p-3 bg-gray-50 border rounded-xl outline-none text-gray-600 focus:border-purple-500">
+                </div>
+                
                 <input type="text" id="contact" class="w-full p-3 bg-gray-50 border rounded-xl outline-none" placeholder="Kontak (WA/IG)">
                 
                 <button onclick="submitReport()" class="w-full bg-purple-800 text-white font-bold py-4 rounded-xl hover:bg-purple-900 transition-colors">
@@ -71,16 +76,10 @@
     </div>
 
     <script type="module">
-        /**
-         * Mengimpor SDK Firebase melalui CDN:
-         * - initializeApp: Memulai koneksi ke project Firebase.
-         * - getFirestore: Akses ke Database Firestore (NoSQL).
-         * - onSnapshot: Fungsi 'Listener' yang mendeteksi perubahan data secara real-time.
-         */
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // Konfigurasi Project Firebase: ID unik yang menghubungkan file ini ke Dashboard Firebase Anda.
+        // Konfigurasi Database: Menghubungkan ke proyek "missingfinderrr" di Cloud
         const firebaseConfig = {
           apiKey: "AIzaSyAZdhcvWrqtW3E_3Hc5s7cVF7JqWmxsURY",
           authDomain: "missingfinderrr.firebaseapp.com",
@@ -92,35 +91,33 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const colRef = collection(db, "reports"); // Menunjuk ke koleksi data bernama 'reports'.
+        const colRef = collection(db, "reports"); 
 
         let currentFilter = 'Semua';
 
         /**
-         * 1. FUNGSI PENYADAP DATA (REAL-TIME LISTENER):
-         * Fungsi ini berjalan otomatis setiap kali ada data baru yang masuk atau dihapus di Cloud.
+         * FUNGSI PENYADAP DATA (onSnapshot): 
+         * Mendeteksi data baru di cloud dan merendernya secara real-time
          */
-        const q = query(colRef, orderBy("createdAt", "desc")); // Mengurutkan laporan dari yang paling baru.
+        const q = query(colRef, orderBy("createdAt", "desc"));
         
         onSnapshot(q, (snapshot) => {
             let reports = [];
             snapshot.docs.forEach(doc => {
-                // Mengambil data dokumen dan melampirkan ID dokumennya untuk keperluan penghapusan data.
                 reports.push({ ...doc.data(), id: doc.id });
             });
-            window.allReports = reports; // Menyimpan salinan data ke variabel global agar bisa difilter.
+            window.allReports = reports; 
             renderDisplay(reports);
         });
 
         /**
-         * 2. FUNGSI RENDER DISPLAY:
-         * Mengonversi data dari database menjadi elemen visual (kartu laporan) di layar pengguna.
+         * FUNGSI TAMPILAN (renderDisplay): 
+         * Membuat elemen kartu laporan termasuk informasi waktu
          */
         window.renderDisplay = (data) => {
             const listElement = document.getElementById('reportList');
-            listElement.innerHTML = ''; // Membersihkan tampilan sebelum memuat ulang data terbaru.
+            listElement.innerHTML = ''; 
             
-            // Logika penyaringan (filtering) berdasarkan kategori yang dipilih.
             const filtered = currentFilter === 'Semua' ? data : data.filter(r => r.category === currentFilter);
 
             filtered.forEach(report => {
@@ -128,7 +125,9 @@
                 const card = document.createElement('div');
                 card.className = "bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all";
                 
-                // Template Kartu Laporan: Mengatur warna aksen berdasarkan status (Orange/Biru).
+                // Format tanggal agar mudah dibaca oleh pengguna Indonesia
+                const formattedTime = report.time ? new Date(report.time).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : 'Waktu tidak diatur';
+
                 card.innerHTML = `
                     <div class="h-2 ${isHilang ? 'bg-orange-400' : 'bg-blue-400'}"></div>
                     <div class="p-5">
@@ -137,7 +136,12 @@
                             <span class="text-[10px] text-gray-400 bg-gray-50 px-2 py-1 rounded">${report.category}</span>
                         </div>
                         <h3 class="font-bold text-gray-800 text-lg mb-2 capitalize">${report.name}</h3>
-                        <p class="text-xs text-gray-500"><i class="fas fa-map-marker-alt mr-2 text-purple-600"></i>${report.location}</p>
+                        
+                        <div class="space-y-1 mt-2">
+                            <p class="text-xs text-gray-500"><i class="fas fa-map-marker-alt mr-2 text-purple-600 w-4"></i>${report.location}</p>
+                            <p class="text-[11px] text-gray-400"><i class="fas fa-calendar-alt mr-2 text-purple-400 w-4"></i>${formattedTime}</p>
+                        </div>
+
                         <div class="pt-3 mt-4 border-t flex justify-between items-center">
                             <span class="text-sm font-bold text-purple-800">${report.contact}</span>
                             <button onclick="deleteReport('${report.id}')" title="Tandai Selesai" class="text-gray-300 hover:text-red-500 transition-colors">
@@ -150,8 +154,8 @@
         };
 
         /**
-         * 3. FUNGSI KIRIM DATA (SEND TO CLOUD):
-         * Mengumpulkan input dari pengguna dan mengunggahnya sebagai dokumen baru ke Firestore.
+         * FUNGSI KIRIM (submitReport): 
+         * Menyimpan data input ke dalam koleksi "reports" di Firestore
          */
         window.submitReport = async () => {
             const data = {
@@ -160,41 +164,41 @@
                 name: document.getElementById('itemName').value,
                 location: document.getElementById('location').value,
                 contact: document.getElementById('contact').value,
-                createdAt: new Date() // Menyimpan timestamp untuk keperluan pengurutan laporan.
+                time: document.getElementById('itemTime').value, // Mengambil nilai tanggal & jam
+                createdAt: new Date()
             };
 
-            // Validasi: Memastikan data minimal (Nama & Lokasi) sudah terisi.
-            if(!data.name || !data.location) return alert("Mohon isi nama barang dan lokasi!");
+            // Validasi input wajib
+            if(!data.name || !data.location || !data.time) return alert("Mohon isi nama, lokasi, dan waktu kejadian!");
 
             try {
-                await addDoc(colRef, data); // Proses pengunggahan ke server Google.
+                await addDoc(colRef, data); 
                 closeModal();
                 alert("Laporan berhasil dikirim!");
-                resetForm(); // Mengosongkan form input.
+                resetForm();
             } catch (err) {
                 console.error("Firebase Error:", err);
-                alert("Gagal mengirim laporan. Pastikan koneksi internet tersedia.");
+                alert("Gagal mengirim laporan ke Cloud.");
             }
         };
 
         /**
-         * 4. FUNGSI HAPUS DATA (FINISH):
-         * Menghapus dokumen dari Firestore berdasarkan ID uniknya saat barang sudah ditemukan.
+         * FUNGSI HAPUS (deleteReport): 
+         * Menghapus dokumen dari cloud database
          */
         window.deleteReport = async (id) => {
             if(confirm("Apakah laporan ini sudah selesai?")) {
                 try {
                     const docRef = doc(db, "reports", id);
-                    await deleteDoc(docRef); // Proses penghapusan permanen dari Cloud.
+                    await deleteDoc(docRef); 
                 } catch (err) {
-                    alert("Gagal menghapus laporan.");
+                    alert("Gagal menghapus data.");
                 }
             }
         };
 
         /**
-         * 5. LOGIKA FILTER UI:
-         * Menangani perubahan warna tombol filter (Aktif vs Tidak Aktif).
+         * LOGIKA FILTER: Mengubah filter kategori yang aktif
          */
         window.setFilter = (cat) => {
             currentFilter = cat;
@@ -210,15 +214,16 @@
             renderDisplay(window.allReports);
         };
 
-        // Fungsi pembantu untuk mereset/mengosongkan input form setelah laporan dikirim.
         function resetForm() {
             document.getElementById('itemName').value = '';
             document.getElementById('location').value = '';
             document.getElementById('contact').value = '';
+            document.getElementById('itemTime').value = '';
         }
     </script>
 
     <script>
+        // Fungsi pembantu untuk antarmuka pengguna
         function openModal() { document.getElementById('modal').classList.remove('hidden'); }
         function closeModal() { document.getElementById('modal').classList.add('hidden'); }
     </script>
