@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Find Your Thing(s) In Our Campus</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header>
+    <h1>Find Your Thing(s) In Our Campus</h1>
+    <p>Platform Pelaporan & Pencarian Barang Hilang / Ditemukan</p>
+  </header>
+
+  <main class="container">
+    <!-- Form Tambah Laporan -->
+    <section class="card">
+      <h2>Buat Laporan Baru</h2>
+      <form id="reportForm">
+        <input type="text" id="title" placeholder="Nama Barang (contoh: Dompet Hitam)" required>
+        
+        <select id="type" required>
+          <option value="Lost">Hilang (Lost)</option>
+          <option value="Found">Ditemukan (Found)</option>
+        </select>
+
+        <input type="text" id="location" placeholder="Lokasi (contoh: Perpustakaan Lt. 2)" required>
+        <textarea id="description" placeholder="Deskripsi rinci barang..." rows="3" required></textarea>
+        <input type="text" id="contact" placeholder="Kontak/WA Pelapor (contoh: 08123456789)" required>
+
+        <!-- Pertanyaan Verifikasi Khusus Barang 'Found' -->
+        <div id="verificationBox">
+          <input type="text" id="claimQuestion" placeholder="Pertanyaan Verifikasi Owner (opsional, misal: Apa warna gantungan kunci?)">
+        </div>
+
+        <button type="submit" id="btnSubmit">Kirim Laporan</button>
+      </form>
+    </section>
+
+    <!-- Kontrol Filter & Pencarian -->
+    <section class="filter-section">
+      <input type="text" id="searchInput" placeholder="Cari barang berdasarkan nama/lokasi...">
+      <select id="filterType">
+        <option value="All">Semua Jenis</option>
+        <option value="Lost">Hilang (Lost)</option>
+        <option value="Found">Ditemukan (Found)</option>
+      </select>
+    </section>
+
+    <!-- Daftar Barang -->
+    <section>
+      <h2>Daftar Laporan</h2>
+      <div id="itemsGrid" class="grid"></div>
+    </section>
+  </main>
+
+  <!-- Modal Form Klaim Barang -->
+  <div id="claimModal" class="modal">
+    <div class="modal-content">
+      <span class="close-btn" id="closeModal">&times;</span>
+      <h3>Form Ajukan Klaim Barang</h3>
+      <p id="modalQuestionText" class="question-text"></p>
+      
+      <form id="claimForm">
+        <input type="hidden" id="claimItemId">
+        <input type="text" id="claimerName" placeholder="Nama Lengkap Kamu" required>
+        <input type="text" id="claimerContact" placeholder="Nomor WhatsApp/Kontak Kamu" required>
+        <textarea id="claimAnswer" placeholder="Jawaban kamu untuk pertanyaan verifikasi..." rows="3" required></textarea>
+        <button type="submit">Kirim Klaim</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- SDK Firebase Versi Module (v10+) -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>

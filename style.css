@@ -1,0 +1,167 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background-color: #f4f6f9;
+  color: #333;
+  padding-bottom: 40px;
+}
+
+header {
+  background-color: #1e293b;
+  color: #fff;
+  text-align: center;
+  padding: 2rem 1rem;
+  margin-bottom: 2rem;
+}
+
+header p {
+  color: #94a3b8;
+  margin-top: 0.5rem;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.card {
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+h2 {
+  margin-bottom: 1rem;
+  color: #0f172a;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+input, select, textarea {
+  padding: 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 1rem;
+  width: 100%;
+}
+
+button {
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+button:hover {
+  background-color: #1d4ed8;
+}
+
+.filter-section {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.item-card {
+  background: white;
+  border-radius: 8px;
+  padding: 1.25rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  border-left: 5px solid #cbd5e1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.item-card.Lost { border-left-color: #ef4444; }
+.item-card.Found { border-left-color: #10b981; }
+
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 0.5rem;
+}
+
+.badge.Lost { background-color: #ef4444; }
+.badge.Found { background-color: #10b981; }
+
+.item-title {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.item-info {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+}
+
+.claim-btn {
+  background-color: #059669;
+  margin-top: 1rem;
+}
+
+.claim-btn:hover { background-color: #047857; }
+
+/* Modal Styling */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 500px;
+  position: relative;
+}
+
+.close-btn {
+  position: absolute;
+  top: 10px; right: 15px;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.question-text {
+  background: #f1f5f9;
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin: 1rem 0;
+  font-style: italic;
+}
