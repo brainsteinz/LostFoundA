@@ -1,9 +1,9 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { 
-  getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp 
+  getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// Konfigurasi Firebase Projek Kamu
+// KREDENSIAL FIREBASE MILIKMU
 const firebaseConfig = {
   apiKey: "AIzaSyAOExLidtV2W7-Wnr2kygospjdbHidjGtQ",
   authDomain: "lostfounda-campus.firebaseapp.com",
@@ -13,34 +13,36 @@ const firebaseConfig = {
   appId: "1:895161227929:web:06fb40dc83f6675ceeb608"
 };
 
-// Inisialisasi Firebase & Firestore
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const itemsCollection = collection(db, "items");
-const claimsCollection = collection(db, "claims");
 
-// DOM Elements
 const reportForm = document.getElementById("reportForm");
-const itemsGrid = document.getElementById("itemsGrid");
+const lostList = document.getElementById("lostList");
+const foundList = document.getElementById("foundList");
+const completedList = document.getElementById("completedList");
 const searchInput = document.getElementById("searchInput");
-const filterType = document.getElementById("filterType");
-const claimModal = document.getElementById("claimModal");
-const closeModal = document.getElementById("closeModal");
-const claimForm = document.getElementById("claimForm");
 
 let allItems = [];
 
-// 1. Submit Laporan Baru
+// 1. Submit Laporan
 reportForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
+  const typeVal = document.getElementById("type").value;
+  const contactPlatformVal = document.getElementById("contactPlatform").value;
+  const contactDetailVal = document.getElementById("contactDetail").value;
+
   const newItem = {
     title: document.getElementById("title").value,
-    type: document.getElementById("type").value,
+    category: document.getElementById("category").value,
+    type: typeVal,
+    date: document.getElementById("date").value,
     location: document.getElementById("location").value,
+    contactPlatform: contactPlatformVal,
+    contactDetail: contactDetailVal,
     description: document.getElementById("description").value,
-    contact: document.getElementById("contact").value,
-    claimQuestion: document.getElementById("claimQuestion").value || "-",
+    status: "Active", // Status awal: Active
     createdAt: serverTimestamp()
   };
 
@@ -50,94 +52,106 @@ reportForm.addEventListener("submit", async (e) => {
     alert("Laporan berhasil dikirim!");
   } catch (err) {
     console.error("Gagal menambah data: ", err);
-    alert("Terjadi kesalahan saat mengirim laporan.");
+    alert("Terjadi kesalahan.");
   }
 });
 
-// 2. Baca Data Real-time dari Firebase
+// 2. Ambil Data Real-time
 const q = query(itemsCollection, orderBy("createdAt", "desc"));
 onSnapshot(q, (snapshot) => {
   allItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  renderItems(allItems);
+  renderDashboard(allItems);
 });
 
-// 3. Render Kartu Laporan ke HTML
-function renderItems(items) {
-  itemsGrid.innerHTML = "";
-  
-  items.forEach(item => {
-    const card = document.createElement("div");
-    card.className = `item-card ${item.type}`;
+// 3. Render Dashboard 3 Kolom
+function renderDashboard(items) {
+  lostList.innerHTML = "";
+  foundList.innerHTML = "";
+  completedList.innerHTML = "";
 
-    let claimBtnHTML = "";
-    if (item.type === "Found") {
-      claimBtnHTML = `<button class="claim-btn" onclick="openClaimModal('${item.id}', '${item.claimQuestion}')">Klaim Barang Ini</button>`;
-    }
-
-    card.innerHTML = `
-      <div>
-        <span class="badge ${item.type}">${item.type.toUpperCase()}</span>
-        <div class="item-title">${item.title}</div>
-        <div class="item-info">📍 ${item.location}</div>
-        <p>${item.description}</p>
-        <br>
-        <small class="item-info">Kontak: ${item.contact}</small>
-      </div>
-      ${claimBtnHTML}
-    `;
-
-    itemsGrid.appendChild(card);
-  });
-}
-
-// 4. Pencarian & Filter
-function filterData() {
   const keyword = searchInput.value.toLowerCase();
-  const selectedType = filterType.value;
+  const filtered = items.filter(item => 
+    item.title.toLowerCase().includes(keyword) ||
+    item.category.toLowerCase().includes(keyword) ||
+    item.location.toLowerCase().includes(keyword)
+  );
 
-  const filtered = allItems.filter(item => {
-    const matchSearch = item.title.toLowerCase().includes(keyword) || item.location.toLowerCase().includes(keyword);
-    const matchType = selectedType === "All" || item.type === selectedType;
-    return matchSearch && matchType;
-  });
+  // Pisahkan Data Berdasarkan Kategori Tampilan
+  const lostItems = filtered.filter(i => i.type === "Lost" && i.status === "Active");
+  const foundItems = filtered.filter(i => i.type === "Found" && i.status === "Active");
+  const completedItems = filtered.filter(i => i.status === "Completed");
 
-  renderItems(filtered);
+  // Render per Kolom
+  renderColumn(lostList, lostItems, "Lost");
+  renderColumn(foundList, foundItems, "Found");
+  renderColumn(completedList, completedItems, "Completed");
 }
 
-searchInput.addEventListener("input", filterData);
-filterType.addEventListener("change", filterData);
+// Function Pembantu untuk Mengelompokkan Data Berdasarkan Tanggal
+function groupItemsByDate(items) {
+  return items.reduce((groups, item) => {
+    const date = item.date || "Tanpa Tanggal";
+    if (!groups[date]) groups[date] = [];
+    groups[date].push(item);
+    return groups;
+  }, {});
+}
 
-// 5. Fitur Modal Klaim Barang
-window.openClaimModal = function(id, question) {
-  document.getElementById("claimItemId").value = id;
-  document.getElementById("modalQuestionText").innerText = 
-    question !== "-" ? `Pertanyaan Verifikasi: "${question}"` : "Tidak ada pertanyaan verifikasi spesifik. Jelaskan ciri barang secara detail.";
-  claimModal.style.display = "flex";
+// Function Render Isi Kolom
+function renderColumn(container, items, columnType) {
+  if (items.length === 0) {
+    container.innerHTML = `<p style="text-align:center; color:#94a3b8; font-size:0.85rem; padding:1rem;">Tidak ada laporan</p>`;
+    return;
+  }
+
+  const grouped = groupItemsByDate(items);
+
+  for (const [date, dateItems] of Object.entries(grouped)) {
+    const dateGroup = document.createElement("div");
+    dateGroup.className = "date-group";
+    dateGroup.innerHTML = `<div class="date-divider">📅 Tanggal: ${date}</div>`;
+
+    dateItems.forEach(item => {
+      const card = document.createElement("div");
+      card.className = "item-card";
+
+      const contactLabel = item.type === "Lost" ? "Kontak Pemilik" : "Kontak Penemu";
+      
+      let actionHTML = "";
+      if (columnType !== "Completed") {
+        actionHTML = `<button class="action-btn btn-complete" onclick="markAsCompleted('${item.id}')">Tandai Selesai</button>`;
+      } else {
+        const completedText = item.type === "Lost" ? "Hilang Selesai" : "Ditemukan Selesai";
+        actionHTML = `<div class="status-completed-text">✓ ${completedText}</div>`;
+      }
+
+      card.innerHTML = `
+        <div class="item-title">${item.title}</div>
+        <span class="category-tag">${item.category}</span>
+        <div class="item-info">📍 ${item.location}</div>
+        <div class="item-info">📱 ${contactLabel}: <strong>${item.contactPlatform}</strong> (${item.contactDetail})</div>
+        <p style="font-size:0.85rem; margin-top:0.4rem; color:#475569;">${item.description}</p>
+        ${actionHTML}
+      `;
+
+      dateGroup.appendChild(card);
+    });
+
+    container.appendChild(dateGroup);
+  }
+}
+
+// 4. Ubah Status Laporan Menjadi Selesai
+window.markAsCompleted = async function(id) {
+  if (confirm("Apakah kasus barang ini sudah selesai/ditemukan kembali?")) {
+    try {
+      const itemRef = doc(db, "items", id);
+      await updateDoc(itemRef, { status: "Completed" });
+    } catch (err) {
+      console.error("Gagal mengupdate status: ", err);
+    }
+  }
 };
 
-closeModal.onclick = () => claimModal.style.display = "none";
-window.onclick = (e) => { if (e.target === claimModal) claimModal.style.display = "none"; };
-
-// 6. Submit Form Klaim ke Firebase
-claimForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const newClaim = {
-    itemId: document.getElementById("claimItemId").value,
-    claimerName: document.getElementById("claimerName").value,
-    claimerContact: document.getElementById("claimerContact").value,
-    answer: document.getElementById("claimAnswer").value,
-    status: "Pending",
-    submittedAt: serverTimestamp()
-  };
-
-  try {
-    await addDoc(claimsCollection, newClaim);
-    claimForm.reset();
-    claimModal.style.display = "none";
-    alert("Pengajuan klaim berhasil dikirim! Penemu akan memeriksa jawaban kamu.");
-  } catch (err) {
-    console.error("Gagal mengajukan klaim: ", err);
-    alert("Gagal mengirim klaim.");
-  }
-});
+// Filter Real-time
+searchInput.addEventListener("input", () => renderDashboard(allItems));
