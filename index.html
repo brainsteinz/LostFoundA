@@ -18,61 +18,82 @@
     <section class="card">
       <h2>Buat Laporan Baru</h2>
       <form id="reportForm">
-        <input type="text" id="title" placeholder="Nama Barang (contoh: Dompet Hitam)" required>
-        
-        <select id="type" required>
-          <option value="Lost">Hilang (Lost)</option>
-          <option value="Found">Ditemukan (Found)</option>
-        </select>
-
-        <input type="text" id="location" placeholder="Lokasi (contoh: Perpustakaan Lt. 2)" required>
-        <textarea id="description" placeholder="Deskripsi rinci barang..." rows="3" required></textarea>
-        <input type="text" id="contact" placeholder="Kontak/WA Pelapor (contoh: 08123456789)" required>
-
-        <!-- Pertanyaan Verifikasi Khusus Barang 'Found' -->
-        <div id="verificationBox">
-          <input type="text" id="claimQuestion" placeholder="Pertanyaan Verifikasi Owner (opsional, misal: Apa warna gantungan kunci?)">
+        <div class="form-group">
+          <input type="text" id="title" placeholder="Nama Barang (contoh: Dompet Hitam)" required>
+          
+          <select id="category" required>
+            <option value="" disabled selected>Pilih Kategori Barang</option>
+            <option value="Elektronik">Elektronik</option>
+            <option value="Berkas / Dokumen">Berkas / Dokumen</option>
+            <option value="Pakaian / Aksesoris">Pakaian / Aksesoris</option>
+            <option value="Kunci">Kunci</option>
+            <option value="Lainnya">Lainnya</option>
+          </select>
         </div>
+
+        <div class="form-group">
+          <select id="type" required>
+            <option value="Lost">Hilang (Lost)</option>
+            <option value="Found">Ditemukan (Found)</option>
+          </select>
+          
+          <input type="date" id="date" required>
+        </div>
+
+        <input type="text" id="location" placeholder="Lokasi Kejadian (contoh: Perpustakaan Lt. 2)" required>
+        
+        <!-- Input Kontak & Kategori Kontak -->
+        <div class="form-group">
+          <select id="contactPlatform" required>
+            <option value="WhatsApp">WhatsApp</option>
+            <option value="Instagram">Instagram</option>
+            <option value="TikTok">TikTok</option>
+            <option value="Line">Line</option>
+            <option value="Lainnya">Lainnya</option>
+          </select>
+          <input type="text" id="contactDetail" placeholder="Nomor / Username Kontak" required>
+        </div>
+
+        <textarea id="description" placeholder="Deskripsi rinci barang..." rows="3" required></textarea>
 
         <button type="submit" id="btnSubmit">Kirim Laporan</button>
       </form>
     </section>
 
-    <!-- Kontrol Filter & Pencarian -->
-    <section class="filter-section">
-      <input type="text" id="searchInput" placeholder="Cari barang berdasarkan nama/lokasi...">
-      <select id="filterType">
-        <option value="All">Semua Jenis</option>
-        <option value="Lost">Hilang (Lost)</option>
-        <option value="Found">Ditemukan (Found)</option>
-      </select>
+    <!-- Filter Pencarian -->
+    <section class="search-section">
+      <input type="text" id="searchInput" placeholder="Cari barang berdasarkan nama, kategori, atau lokasi...">
     </section>
 
-    <!-- Daftar Barang -->
-    <section>
-      <h2>Daftar Laporan</h2>
-      <div id="itemsGrid" class="grid"></div>
+    <!-- Tampilan 3 Kolom Utama -->
+    <section class="dashboard-grid">
+      <!-- Kolom Barang Hilang -->
+      <div class="column col-lost">
+        <div class="column-header">
+          <h3>Barang Hilang</h3>
+        </div>
+        <div id="lostList" class="column-content"></div>
+      </div>
+
+      <!-- Kolom Barang Ditemukan -->
+      <div class="column col-found">
+        <div class="column-header">
+          <h3>Barang Ditemukan</h3>
+        </div>
+        <div id="foundList" class="column-content"></div>
+      </div>
+
+      <!-- Kolom Selesai -->
+      <div class="column col-completed">
+        <div class="column-header">
+          <h3>Selesai</h3>
+        </div>
+        <div id="completedList" class="column-content"></div>
+      </div>
     </section>
   </main>
 
-  <!-- Modal Form Klaim Barang -->
-  <div id="claimModal" class="modal">
-    <div class="modal-content">
-      <span class="close-btn" id="closeModal">&times;</span>
-      <h3>Form Ajukan Klaim Barang</h3>
-      <p id="modalQuestionText" class="question-text"></p>
-      
-      <form id="claimForm">
-        <input type="hidden" id="claimItemId">
-        <input type="text" id="claimerName" placeholder="Nama Lengkap Kamu" required>
-        <input type="text" id="claimerContact" placeholder="Nomor WhatsApp/Kontak Kamu" required>
-        <textarea id="claimAnswer" placeholder="Jawaban kamu untuk pertanyaan verifikasi..." rows="3" required></textarea>
-        <button type="submit">Kirim Klaim</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- SDK Firebase Versi Module (v10+) -->
+  <!-- SDK Firebase Versi Module -->
   <script type="module" src="app.js"></script>
 </body>
 </html>
